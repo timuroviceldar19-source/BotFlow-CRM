@@ -1,0 +1,31 @@
+{
+  "name": "botflow-crm-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "db:migrate": "powershell -Command \"Set-Location 'apps/bot-api'; & .\\.venv\\Scripts\\alembic.exe -c .\\alembic.ini upgrade head\"",
+    "db:history": "powershell -Command \"Set-Location 'apps/bot-api'; & .\\.venv\\Scripts\\alembic.exe -c .\\alembic.ini history\"",
+    "dev:start": "powershell -ExecutionPolicy Bypass -File .\\scripts\\dev-start.ps1",
+    "dev:stop": "powershell -ExecutionPolicy Bypass -File .\\scripts\\dev-stop.ps1",
+    "dev:status": "powershell -ExecutionPolicy Bypass -File .\\scripts\\dev-status.ps1",
+    "demo:seed": "powershell -Command \"Set-Location 'apps/bot-api'; $env:PYTHONPATH='.'; & .\\.venv\\Scripts\\python.exe scripts\\seed_demo.py\"",
+    "test:backend": "powershell -Command \"Set-Location 'apps/bot-api'; $env:PYTHONPATH='.'; & .\\.venv\\Scripts\\pytest.exe tests\"",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f --tail=100",
+    "docker:ps": "docker compose ps",
+    "docker:restart": "docker compose restart",
+    "dev:web": "npm --workspace apps/web run dev",
+    "build:web": "npm --workspace apps/web run build",
+    "prod:deploy": "bash infra/scripts/deploy.sh",
+    "prod:deploy:ssl": "bash infra/scripts/deploy.sh --init-ssl",
+    "prod:backup": "bash infra/scripts/backup.sh",
+    "prod:restore": "bash infra/scripts/restore.sh",
+    "prod:health": "bash infra/scripts/healthcheck.sh",
+    "prod:logs": "docker compose -f docker-compose.prod.yml logs -f --tail=100",
+    "prod:stop": "docker compose -f docker-compose.prod.yml down",
+    "prod:ps": "docker compose -f docker-compose.prod.yml ps"
+  }
+}

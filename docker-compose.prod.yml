@@ -1,0 +1,114 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-botflow_crm}
+      POSTGRES_USER: ${POSTGRES_USER:-botflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-botflow} -d ${POSTGRES_DB:-botflow_crm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  bot-api:
+    build:
+      context: ./apps/bot-api
+    restart: always
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN:?Set BOT_TOKEN in .env}
+      BOT_USERNAME: ${BOT_USERNAME:-botflow_crm_bot}
+      BOT_MODE: ${BOT_MODE:-polling}
+      APP_BASE_URL: ${APP_BASE_URL:-http://bot-api:8000}
+      WEB_BASE_URL: ${WEB_BASE_URL:-http://web:3000}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-botflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-botflow_crm}
+      PARTNER_DEFAULT_URL: ${PARTNER_DEFAULT_URL:?Set PARTNER_DEFAULT_URL in .env}
+      PARTNER_TRACKING_PARAM: ${PARTNER_TRACKING_PARAM:-click_id}
+      PARTNER_WEBHOOK_SECRET: ${PARTNER_WEBHOOK_SECRET:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?Set ADMIN_API_KEY in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "alembic -c alembic.ini upgrade head &&
+      python -m app.run_bot &
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - internal
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        - NODE_ENV=production
+    restart: always
+    environment:
+      API_BASE_URL: http://bot-api:8000
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      BOT_USERNAME: ${BOT_USERNAME:-botflow_crm_bot}
+      WEB_BASE_URL: ${PUBLIC_URL:-http://localhost:3000}
+    depends_on:
+      bot-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+    depends_on:
+      - web
+      - bot-api
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - internal
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'"
+    networks:
+      - internal
+
+volumes:
+  postgres-data:
+  certbot-etc:
+  certbot-var:
+  webroot:
+
+networks:
+  internal:
+    driver: bridge

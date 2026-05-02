@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-botflow_crm}
+      POSTGRES_USER: ${POSTGRES_USER:-botflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-botflow}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  bot-api:
+    build:
+      context: ./apps/bot-api
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_USERNAME: ${BOT_USERNAME:-botflow_crm_bot}
+      BOT_MODE: ${BOT_MODE:-polling}
+      APP_BASE_URL: http://localhost:8000
+      WEB_BASE_URL: http://localhost:3000
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-botflow}:${POSTGRES_PASSWORD:-botflow}@postgres:5432/${POSTGRES_DB:-botflow_crm}
+      PARTNER_DEFAULT_URL: ${PARTNER_DEFAULT_URL:-https://example.com/register}
+      PARTNER_TRACKING_PARAM: ${PARTNER_TRACKING_PARAM:-click_id}
+      PARTNER_WEBHOOK_SECRET: ${PARTNER_WEBHOOK_SECRET:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-change-me}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "alembic -c alembic.ini upgrade head &&
+      python -m app.run_bot &
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./apps/bot-api/app:/app/app
+      - bot-uploads:/app/storage/uploads
+
+  web:
+    build:
+      context: ./apps/web
+      target: dev
+    environment:
+      API_BASE_URL: http://bot-api:8000
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-change-me}
+      BOT_USERNAME: ${BOT_USERNAME:-botflow_crm_bot}
+      WEB_BASE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - bot-api
+    volumes:
+      - ./apps/web/app:/app/app
+      - ./apps/web/lib:/app/lib
+
+volumes:
+  postgres-data:
+  bot-uploads:
