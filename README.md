@@ -201,4 +201,4 @@ This project is designed to be presented as a fullstack automation case study:
 - solution: bot-driven CRM funnel with dashboard analytics and webhook integrations;
 - business value: less manual tracking, clearer attribution, faster verification, and demo-ready reporting.
 
-See [docs/CASE_STUDY.md](docs/CASE_STUDY.md) for a recruiter-friendly project breakdown, [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) for a 5-minute walkthrough, [docs/ARCHITECTURE_NOTES.md](docs/ARCHITECTURE_NOTES.md) for design decisions, and [docs/PORTFOLIO_COPY.md](docs/PORTFOLIO_COPY.md) for ready-to-use resume, LinkedIn, HH, and interview copy.
+See [docs/CASE_STUDY.md](docs/CASE_STUDY.md) for a recruiter-friendly project breakdown, [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) for a 5-minute walkthrough, [docs/ARCHITECTURE_NOTES.md](docs/ARCHITECTURE_NOTES.md) for design decisions, [docs/RELEASE_NOTES_V1.md](docs/RELEASE_NOTES_V1.md) for the v1.0.0 release summary, and [docs/PORTFOLIO_COPY.md](docs/PORTFOLIO_COPY.md) for ready-to-use resume, LinkedIn, HH, and interview copy.

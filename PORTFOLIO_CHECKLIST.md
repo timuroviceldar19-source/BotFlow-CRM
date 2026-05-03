@@ -94,6 +94,7 @@ Before making the repository public:
 - confirm `docs/CASE_STUDY.md` has the interview narrative;
 - confirm `docs/DEMO_SCRIPT.md` gives a 5-minute walkthrough;
 - confirm `docs/ARCHITECTURE_NOTES.md` explains the main design decisions;
+- confirm `docs/RELEASE_NOTES_V1.md` has a concise v1.0.0 release summary;
 - add a concise repository description:
 
 ```text
