@@ -92,6 +92,8 @@ Before making the repository public:
 - confirm screenshots render in README;
 - confirm `README.md` explains the product in the first screen;
 - confirm `docs/CASE_STUDY.md` has the interview narrative;
+- confirm `docs/DEMO_SCRIPT.md` gives a 5-minute walkthrough;
+- confirm `docs/ARCHITECTURE_NOTES.md` explains the main design decisions;
 - add a concise repository description:
 
 ```text
